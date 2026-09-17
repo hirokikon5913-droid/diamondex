@@ -2,247 +2,296 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diamond Executive - Beta -</title>
+    <!-- スマホでの拡大縮小を防ぎ、アプリのような挙動にする設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diamond Executive - Beta V2 -</title>
     <style>
+        /* --- ベース設定 --- */
         :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --accent: #4caf50;
-            --accent-hover: #45a049;
-            --danger: #f44336;
-            --border: #333;
+            --bg-base: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --btn-green: #10b981;
+            --btn-green-hover: #059669;
+            --border-color: #334155;
         }
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-base);
             color: var(--text-main);
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            display: flex;
+            justify-content: center; /* PC等で見ても中央にスマホ幅で配置 */
+        }
+        #app {
+            width: 100%;
+            max-width: 500px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
+            background-color: var(--bg-base);
         }
+        
+        /* --- ヘッダー（上部固定） --- */
         header {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header-title {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: #60a5fa;
+            text-align: center;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .status-item {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 4px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+        .status-val {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        /* --- メインコンテンツ --- */
+        main {
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .section-title {
+            font-size: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 5px;
+            margin: 0 0 10px 0;
+            color: var(--text-sub);
+        }
+
+        /* --- ボタン類 --- */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 14px 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:disabled { background-color: #475569 !important; color: #94a3b8; cursor: not-allowed; }
+        .btn-play { background-color: var(--accent); }
+        .btn-scout { background-color: var(--btn-green); }
+
+        /* --- 総合力 ＆ ログ --- */
+        .power-box {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-weight: bold;
+        }
+        .log-window {
+            background-color: #000;
+            color: #4ade80;
+            font-family: monospace;
+            font-size: 0.85rem;
+            padding: 12px;
+            height: 120px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            line-height: 1.5;
+        }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px dashed #333; padding-bottom: 4px;}
+
+        /* --- ロスター（カード型） --- */
+        .roster-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 30px;
+        }
+        .player-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .player-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap; /* スマホ用に折り返し許可 */
-            gap: 10px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
         }
-        h1 { margin: 0; font-size: 1.5rem; color: #90caf9; }
-        .stats-bar { display: flex; flex-wrap: wrap; gap: 15px; font-size: 1.1rem; font-weight: bold; }
-        
-        .container {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            overflow: hidden;
-        }
-        .panel {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        .left-panel { flex: 1; min-width: 250px; }
-        .right-panel { flex: 2; overflow-y: auto; }
-        
-        button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 15px; /* スマホでタップしやすいよう少し太く */
-            margin-bottom: 10px;
+        .player-name { font-size: 1.1rem; font-weight: bold; }
+        .player-role { 
+            font-size: 0.75rem; 
+            padding: 3px 8px; 
             border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-            width: 100%;
-            font-size: 1rem;
+            color: #fff;
         }
-        button:hover { background-color: var(--accent-hover); }
-        button:disabled { background-color: #555; cursor: not-allowed; }
+        .role-pitcher { background: #b91c1c; } /* 投手は赤系 */
+        .role-batter { background: #1d4ed8; }  /* 野手は青系 */
         
-        h2 { font-size: 1.2rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
-        
-        /* テーブルの基本設定 */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
-        th { background-color: #2c2c2c; }
-        
-        .log-window {
-            background-color: #000;
-            color: #0f0;
-            font-family: monospace;
-            padding: 10px;
-            height: 200px;
-            overflow-y: auto;
-            border-radius: 4px;
-            margin-top: auto;
-            border: 1px solid #333;
+        .player-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-sub);
         }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 2px;}
-
-        /* =========================================
-           スマートフォン用レスポンシブデザイン (幅768px以下)
-           ========================================= */
-        @media (max-width: 768px) {
-            body {
-                height: auto; /* 画面高さの固定を解除し、スクロール可能に */
-                min-height: 100vh;
-                padding: 10px;
-            }
-            .container {
-                flex-direction: column; /* 左右パネルを縦積みに変更 */
-                overflow: visible;
-            }
-            .right-panel {
-                overflow-x: auto; /* テーブルが画面外にはみ出る場合は横スクロール */
-            }
-            table th, table td {
-                white-space: nowrap; /* 文字が縦に潰れるのを防ぐ */
-                padding: 6px;
-            }
-            .log-window {
-                height: 150px; /* スマホではログ領域を少し小さく */
-                margin-top: 20px;
-            }
+        .player-ovr { 
+            font-size: 1.3rem; 
+            font-weight: 900; 
+            color: #fbbf24; /* ゴールド */
         }
     </style>
 </head>
 <body>
+    <div id="app">
+        <header>
+            <h1 class="header-title">Diamond Executive</h1>
+            <div class="status-grid">
+                <div class="status-item">資金<span class="status-val" id="funds">¥0万</span></div>
+                <div class="status-item">成績<span class="status-val" id="record">0勝0敗</span></div>
+                <div class="status-item">進行度<span class="status-val" id="games">0/143</span></div>
+            </div>
+        </header>
 
-    <header>
-        <h1>Diamond Executive <span style="font-size:0.8rem; color:#888;">Beta Build</span></h1>
-        <div class="stats-bar">
-            <div>資金: ¥<span id="funds">1000</span>万</div>
-            <div>成績: <span id="wins">0</span>勝 <span id="losses">0</span>敗</div>
-            <div>試合数: <span id="games">0</span>/143</div>
-        </div>
-    </header>
+        <main>
+            <!-- アクション -->
+            <div>
+                <h2 class="section-title">GMコマンド</h2>
+                <div class="btn-group">
+                    <button id="btn-play" class="btn-play" onclick="playGame()">1試合進行</button>
+                    <button id="btn-scout" class="btn-scout" onclick="scoutPlayer()">スカウト (¥100万)</button>
+                </div>
+            </div>
 
-    <div class="container">
-        <!-- 上パネル（スマホ時）：コマンド＆ログ -->
-        <div class="panel left-panel">
-            <h2>GMコマンド</h2>
-            <button id="btn-play" onclick="playGame()">1試合進行</button>
-            <button id="btn-scout" onclick="scoutPlayer()">スカウト実行 (¥100万)</button>
-            
-            <h2 style="margin-top: 20px;">チーム総合力</h2>
-            <p>打撃力: <span id="team-batting">0</span></p>
-            <p>投手力: <span id="team-pitching">0</span></p>
+            <!-- チーム状況 -->
+            <div>
+                <h2 class="section-title">チーム総合力</h2>
+                <div class="power-box">
+                    <div>打撃力: <span id="team-batting" style="color:#60a5fa">0</span></div>
+                    <div>投手力: <span id="team-pitching" style="color:#f87171">0</span></div>
+                </div>
+            </div>
 
-            <h2 style="margin-top: 20px;">システムログ</h2>
-            <div class="log-window" id="log-window"></div>
-        </div>
+            <!-- ログ -->
+            <div>
+                <h2 class="section-title">システムログ</h2>
+                <div class="log-window" id="log-window"></div>
+            </div>
 
-        <!-- 下パネル（スマホ時）：ロスター（名簿） -->
-        <div class="panel right-panel">
-            <h2>所属選手ロスター</h2>
-            <!-- スマホではこの領域が横スクロール可能になります -->
-            <table>
-                <thead>
-                    <tr>
-                        <th>名前</th>
-                        <th>役割</th>
-                        <th>巧打/球威</th>
-                        <th>長打/制球</th>
-                        <th>選球/変化</th>
-                        <th>総合力(OVR)</th>
-                        <th>年俸</th>
-                    </tr>
-                </thead>
-                <tbody id="roster-body">
-                    <!-- JavaScriptで描画 -->
-                </tbody>
-            </table>
-        </div>
+            <!-- ロスター（名簿） -->
+            <div>
+                <h2 class="section-title">所属選手（ロスター）</h2>
+                <div class="roster-list" id="roster-body">
+                    <!-- JSでカードが生成されます -->
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        // --- データモデル ---
         const lastNames = ["鈴木", "佐藤", "田中", "高橋", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "佐々木", "山口", "松本", "井上", "木村", "林", "斎藤"];
         
         class Player {
             constructor(role) {
                 this.name = lastNames[Math.floor(Math.random() * lastNames.length)];
-                this.role = role; // "野手" or "投手"
-                // 1〜100のパラメーター
+                this.role = role;
                 this.stat1 = Math.floor(Math.random() * 60) + 20; 
                 this.stat2 = Math.floor(Math.random() * 60) + 20;
                 this.stat3 = Math.floor(Math.random() * 60) + 20;
                 this.ovr = Math.floor((this.stat1 + this.stat2 + this.stat3) / 3);
-                this.salary = Math.floor(this.ovr * 0.5) + 10; // 年俸(万円)
+                this.salary = Math.floor(this.ovr * 0.5) + 10;
             }
         }
 
-        // --- ステート管理 ---
         let state = {
             funds: 1000,
             wins: 0,
             losses: 0,
             games: 0,
-            roster: [],
-            teamBatting: 0,
-            teamPitching: 0
+            roster: []
         };
 
-        // --- 初期化 ---
         function init() {
-            log("GM就任おめでとうございます。チーム編成を開始します。");
-            // 初期メンバー生成（野手5名、投手3名）
+            log("GM就任。チーム編成を開始します。");
             for(let i=0; i<5; i++) state.roster.push(new Player("野手"));
             for(let i=0; i<3; i++) state.roster.push(new Player("投手"));
             updateUI();
         }
 
-        // --- コアロジック ---
         function updateUI() {
-            document.getElementById('funds').innerText = state.funds;
-            document.getElementById('wins').innerText = state.wins;
-            document.getElementById('losses').innerText = state.losses;
-            document.getElementById('games').innerText = state.games;
+            document.getElementById('funds').innerText = `¥${state.funds}万`;
+            document.getElementById('record').innerText = `${state.wins}勝${state.losses}敗`;
+            document.getElementById('games').innerText = `${state.games}/143`;
 
-            // 総合力計算
-            let batTotal = 0;
-            let pitTotal = 0;
-            let batCount = 0;
-            let pitCount = 0;
-
+            let batTotal = 0, pitTotal = 0, batCount = 0, pitCount = 0;
             const tbody = document.getElementById('roster-body');
             tbody.innerHTML = '';
 
+            // ロスターカードの生成
             state.roster.forEach(p => {
                 if(p.role === "野手") { batTotal += p.ovr; batCount++; }
                 else { pitTotal += p.ovr; pitCount++; }
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${p.name}</td>
-                    <td>${p.role}</td>
-                    <td>${p.stat1}</td>
-                    <td>${p.stat2}</td>
-                    <td>${p.stat3}</td>
-                    <td><strong>${p.ovr}</strong></td>
-                    <td>¥${p.salary}万</td>
+                const roleClass = p.role === "野手" ? "role-batter" : "role-pitcher";
+                const statLabels = p.role === "野手" ? ["巧打", "長打", "選球"] : ["球威", "制球", "変化"];
+
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.innerHTML = `
+                    <div class="player-header">
+                        <div class="player-name">${p.name} <span class="player-role ${roleClass}">${p.role}</span></div>
+                        <div class="player-ovr">OVR ${p.ovr}</div>
+                    </div>
+                    <div class="player-stats">
+                        <div>${statLabels[0]}: ${p.stat1} | ${statLabels[1]}: ${p.stat2} | ${statLabels[2]}: ${p.stat3}</div>
+                        <div>年俸: ¥${p.salary}万</div>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                tbody.appendChild(card);
             });
 
-            state.teamBatting = batCount > 0 ? Math.floor(batTotal) : 0;
-            state.teamPitching = pitCount > 0 ? Math.floor(pitTotal) : 0;
-            document.getElementById('team-batting').innerText = state.teamBatting;
-            document.getElementById('team-pitching').innerText = state.teamPitching;
+            const tBatting = batCount > 0 ? Math.floor(batTotal) : 0;
+            const tPitching = pitCount > 0 ? Math.floor(pitTotal) : 0;
+            document.getElementById('team-batting').innerText = tBatting;
+            document.getElementById('team-pitching').innerText = tPitching;
 
-            // ボタン制御
             document.getElementById('btn-scout').disabled = state.funds < 100;
             document.getElementById('btn-play').disabled = state.games >= 143;
         }
@@ -255,66 +304,53 @@
             window.insertBefore(div, window.firstChild);
         }
 
-        // --- アクション ---
         function scoutPlayer() {
             if (state.funds < 100) return;
             state.funds -= 100;
             const role = Math.random() > 0.5 ? "野手" : "投手";
             const newPlayer = new Player(role);
             
-            // 稀に覚醒選手
-            if (Math.random() > 0.85) {
+            if (Math.random() > 0.85) { // 覚醒
                 newPlayer.stat1 += 20; newPlayer.stat2 += 20; newPlayer.stat3 += 20;
                 newPlayer.ovr = Math.floor((newPlayer.stat1 + newPlayer.stat2 + newPlayer.stat3) / 3);
             }
-
             state.roster.push(newPlayer);
-            log(`スカウト成功！ ${newPlayer.name}（${newPlayer.role} | OVR:${newPlayer.ovr}）を獲得しました。`);
+            log(`スカウト: ${newPlayer.name}(${newPlayer.role}) OVR:${newPlayer.ovr} を獲得。`);
             updateUI();
         }
 
         function playGame() {
             if (state.games >= 143) return;
 
-            // 敵チームのランダム生成（ゲーム進行度に合わせて少し強くなる）
+            const myBatting = parseInt(document.getElementById('team-batting').innerText);
+            const myPitching = parseInt(document.getElementById('team-pitching').innerText);
+            
             const enemyBatting = 150 + Math.floor(Math.random() * 100) + (state.games * 0.5);
             const enemyPitching = 150 + Math.floor(Math.random() * 100) + (state.games * 0.5);
 
-            // シミュレーション（自チーム打撃 vs 敵投手 / 敵打撃 vs 自チーム投手）
-            // 乱数（運）要素を加味
-            const myScoreBase = (state.teamBatting - enemyPitching) / 20;
-            const enemyScoreBase = (enemyBatting - state.teamPitching) / 20;
+            let myScore = Math.max(0, Math.floor((myBatting - enemyPitching) / 20 + (Math.random() * 5)));
+            let enemyScore = Math.max(0, Math.floor((enemyBatting - myPitching) / 20 + (Math.random() * 5)));
 
-            let myScore = Math.max(0, Math.floor(myScoreBase + (Math.random() * 5)));
-            let enemyScore = Math.max(0, Math.floor(enemyScoreBase + (Math.random() * 5)));
-
-            // 引き分けの場合は乱数で決着
-            if (myScore === enemyScore) {
-                Math.random() > 0.5 ? myScore++ : enemyScore++;
-            }
+            if (myScore === enemyScore) Math.random() > 0.5 ? myScore++ : enemyScore++;
 
             let income = 0;
             if (myScore > enemyScore) {
                 state.wins++;
-                income = 30 + Math.floor(Math.random() * 20); // 勝利報酬
-                log(`第${state.games + 1}戦: ○ ${myScore} - ${enemyScore} で勝利！ (+¥${income}万)`);
+                income = 30 + Math.floor(Math.random() * 20);
+                log(`第${state.games + 1}戦: ○ ${myScore} - ${enemyScore} (収入:+¥${income}万)`);
             } else {
                 state.losses++;
-                income = 10 + Math.floor(Math.random() * 10); // 敗北報酬
-                log(`第${state.games + 1}戦: ● ${myScore} - ${enemyScore} で敗北... (+¥${income}万)`);
+                income = 10 + Math.floor(Math.random() * 10);
+                log(`第${state.games + 1}戦: ● ${myScore} - ${enemyScore} (収入:+¥${income}万)`);
             }
 
             state.funds += income;
             state.games++;
-
-            if (state.games === 143) {
-                log(`【シーズン終了】成績: ${state.wins}勝 ${state.losses}敗。来季に向けて編成を行いましょう！`);
-            }
-
+            
+            if (state.games === 143) log(`【シーズン終了】 ${state.wins}勝${state.losses}敗。`);
             updateUI();
         }
 
-        // 起動
         init();
     </script>
 </body>
