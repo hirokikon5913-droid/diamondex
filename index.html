@@ -32,9 +32,12 @@
             border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap; /* スマホ用に折り返し許可 */
+            gap: 10px;
         }
         h1 { margin: 0; font-size: 1.5rem; color: #90caf9; }
-        .stats-bar { display: flex; gap: 20px; font-size: 1.2rem; font-weight: bold; }
+        .stats-bar { display: flex; flex-wrap: wrap; gap: 15px; font-size: 1.1rem; font-weight: bold; }
+        
         .container {
             display: flex;
             gap: 20px;
@@ -56,19 +59,21 @@
             background-color: var(--accent);
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 12px 15px; /* スマホでタップしやすいよう少し太く */
             margin-bottom: 10px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
             width: 100%;
+            font-size: 1rem;
         }
         button:hover { background-color: var(--accent-hover); }
         button:disabled { background-color: #555; cursor: not-allowed; }
         
         h2 { font-size: 1.2rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
         
+        /* テーブルの基本設定 */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
         th { background-color: #2c2c2c; }
@@ -85,6 +90,32 @@
             border: 1px solid #333;
         }
         .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 2px;}
+
+        /* =========================================
+           スマートフォン用レスポンシブデザイン (幅768px以下)
+           ========================================= */
+        @media (max-width: 768px) {
+            body {
+                height: auto; /* 画面高さの固定を解除し、スクロール可能に */
+                min-height: 100vh;
+                padding: 10px;
+            }
+            .container {
+                flex-direction: column; /* 左右パネルを縦積みに変更 */
+                overflow: visible;
+            }
+            .right-panel {
+                overflow-x: auto; /* テーブルが画面外にはみ出る場合は横スクロール */
+            }
+            table th, table td {
+                white-space: nowrap; /* 文字が縦に潰れるのを防ぐ */
+                padding: 6px;
+            }
+            .log-window {
+                height: 150px; /* スマホではログ領域を少し小さく */
+                margin-top: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -99,7 +130,7 @@
     </header>
 
     <div class="container">
-        <!-- 左パネル：コマンド＆ログ -->
+        <!-- 上パネル（スマホ時）：コマンド＆ログ -->
         <div class="panel left-panel">
             <h2>GMコマンド</h2>
             <button id="btn-play" onclick="playGame()">1試合進行</button>
@@ -113,9 +144,10 @@
             <div class="log-window" id="log-window"></div>
         </div>
 
-        <!-- 右パネル：ロスター（名簿） -->
+        <!-- 下パネル（スマホ時）：ロスター（名簿） -->
         <div class="panel right-panel">
             <h2>所属選手ロスター</h2>
+            <!-- スマホではこの領域が横スクロール可能になります -->
             <table>
                 <thead>
                     <tr>
@@ -264,12 +296,12 @@
             let income = 0;
             if (myScore > enemyScore) {
                 state.wins++;
-                income = 30 + Math.floor(Math.random() * 20); // 勝利報酬（観客増）
-                log(`第${state.games + 1}戦: ○ ${myScore} - ${enemyScore} で勝利！ (観客収入: +¥${income}万)`);
+                income = 30 + Math.floor(Math.random() * 20); // 勝利報酬
+                log(`第${state.games + 1}戦: ○ ${myScore} - ${enemyScore} で勝利！ (+¥${income}万)`);
             } else {
                 state.losses++;
                 income = 10 + Math.floor(Math.random() * 10); // 敗北報酬
-                log(`第${state.games + 1}戦: ● ${myScore} - ${enemyScore} で敗北... (観客収入: +¥${income}万)`);
+                log(`第${state.games + 1}戦: ● ${myScore} - ${enemyScore} で敗北... (+¥${income}万)`);
             }
 
             state.funds += income;
