@@ -3,65 +3,867 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diamond Executive - Beta V4 -</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Diamond Executive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb' },
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        danger: '#ef4444',
+                        success: '#10b981',
+                        warning: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .glass-panel { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border: 1px solid #334155; }
+        .log-container { max-height: 250px; overflow-y: auto; }
+        
+        /* Loading overlay */
+        #loader { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body>
-    <div id="app">
-        <header>
-            <h1 class="header-title">Diamond Executive <span id="owner-trust">支持率:100%</span></h1>
-            <div class="calendar-display" id="current-date">1年目 3月 (開幕)</div>
-            <div class="status-grid">
-                <div class="status-item">資金<span class="status-val" id="funds">¥5000万</span></div>
-                <div class="status-item">成績<span class="status-val" id="record">0勝0敗</span></div>
-                <div class="status-item">人気度<span class="status-val" id="popularity">D</span></div>
+<body class="flex flex-col min-h-screen">
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex justify-center items-center p-4 backdrop-blur-sm">
+        <div class="bg-dark-800 border border-dark-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden transform transition-all">
+            <div id="modal-header" class="px-5 py-4 border-b border-dark-700 font-bold text-lg flex items-center gap-2">
+                <span id="modal-icon">🔔</span> <span id="modal-title">通知</span>
             </div>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="app.switchTab('tab-dash')">GMデスク</button>
-            <button class="tab-btn" onclick="app.switchTab('tab-roster')">編成(スタメン)</button>
-            <button class="tab-btn" onclick="app.switchTab('tab-front')">フロント人事</button>
-        </div>
-
-        <!-- タブ1: GMデスク (試合と進行) -->
-        <div id="tab-dash" class="tab-content active">
-            <div class="alert-box" id="validation-alert">⚠️ エラー</div>
-            
-            <h2 class="section-title">本日のスケジュール</h2>
-            <div class="match-modes">
-                <button class="btn-action" onclick="app.playMatch(1)">⚾ 1球進行 (観戦)</button>
-                <button class="btn-action" onclick="app.playMatch(2)">⚾ ダイジェスト</button>
-                <button class="btn-action" onclick="app.playMatch(3)">⚾ 結果スキップ</button>
+            <div id="modal-body" class="p-5 text-sm text-slate-300 leading-relaxed max-h-96 overflow-y-auto">
+                <!-- Content -->
             </div>
-            <button class="btn-secondary" onclick="app.advanceDay()">試合なしで1日進む</button>
-            
-            <h2 class="section-title">実況・システムログ</h2>
-            <div class="log-window" id="log-window"></div>
-        </div>
-
-        <!-- タブ2: 編成 (スタメンと適性) -->
-        <div id="tab-roster" class="tab-content">
-            <h2 class="section-title">スタメンオーダー</h2>
-            <button class="btn-secondary" onclick="app.autoSetOrder()">AI自動編成</button>
-            <div id="order-list" class="roster-grid"></div>
-            
-            <h2 class="section-title">ベンチ・控え</h2>
-            <div id="bench-list" class="roster-grid"></div>
-        </div>
-
-        <!-- タブ3: フロント人事と投資 -->
-        <div id="tab-front" class="tab-content">
-            <h2 class="section-title">球団スタッフ</h2>
-            <div id="staff-list"></div>
-            <h2 class="section-title">スタジアム改修</h2>
-            <button class="btn-scout" onclick="app.upgradeStadium()">ホームランテラス増設 (¥3億)</button>
+            <div class="p-4 border-t border-dark-700 bg-dark-900 text-right">
+                <button onclick="UI.closeModal()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 rounded-lg text-white font-medium transition-colors">確認</button>
+            </div>
         </div>
     </div>
 
-    <!-- モジュールの読み込み -->
-    <script src="js/models.js"></script>
-    <script src="js/engine.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner mb-4"></div>
+        <div id="loader-text" class="text-brand-500 font-bold">シミュレーション進行中...</div>
+    </div>
+
+    <header class="glass-panel sticky top-0 z-40 px-4 py-3 shadow-lg">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <span class="text-brand-500">❖</span> Diamond Executive
+            </h1>
+            <div class="text-xs font-medium px-2 py-1 bg-dark-700 rounded text-success">オーナー支持率: <span id="ui-trust">100</span>%</div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center text-xs">
+            <div class="bg-dark-900 rounded p-1 border border-dark-700">
+                <div class="text-slate-400">日付</div>
+                <div class="font-bold text-amber-400 text-sm" id="ui-date">3月1日</div>
+            </div>
+            <div class="bg-dark-900 rounded p-1 border border-dark-700">
+                <div class="text-slate-400">資金</div>
+                <div class="font-bold text-white text-sm" id="ui-funds">¥5.0億</div>
+            </div>
+            <div class="bg-dark-900 rounded p-1 border border-dark-700">
+                <div class="text-slate-400">成績</div>
+                <div class="font-bold text-white text-sm" id="ui-record">0勝0敗</div>
+            </div>
+            <div class="bg-dark-900 rounded p-1 border border-dark-700">
+                <div class="text-slate-400">順位</div>
+                <div class="font-bold text-white text-sm" id="ui-rank">-位</div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="flex border-b border-dark-700 bg-dark-800 text-sm font-medium">
+        <button class="flex-1 py-3 text-slate-400 hover:text-white border-b-2 border-transparent focus:outline-none transition-colors" data-target="tab-dash" onclick="UI.switchTab(this)">ダッシュボード</button>
+        <button class="flex-1 py-3 text-slate-400 hover:text-white border-b-2 border-transparent focus:outline-none transition-colors" data-target="tab-roster" onclick="UI.switchTab(this)">編成・スタメン</button>
+        <button class="flex-1 py-3 text-slate-400 hover:text-white border-b-2 border-transparent focus:outline-none transition-colors" data-target="tab-league" onclick="UI.switchTab(this)">リーグ戦績</button>
+    </nav>
+
+    <main class="flex-1 p-4 overflow-y-auto">
+        <div id="tab-dash" class="tab-content active space-y-4">
+            
+            <div class="glass-panel p-4 rounded-xl">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">進行コマンド</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button onclick="Game.advanceTime(1)" class="bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                        <span>▶</span> 1日進める
+                    </button>
+                    <button onclick="Game.advanceTime(7)" class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                        <span>⏭</span> 1週間スキップ
+                    </button>
+                    <button onclick="Game.advanceTime('month')" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                        <span>🗓</span> 月末までスキップ
+                    </button>
+                </div>
+                <div id="lineup-warning" class="mt-2 text-xs text-danger font-bold hidden bg-red-900 bg-opacity-20 p-2 rounded border border-danger">
+                    ⚠️ スタメンが正しく設定されていません。編成タブを確認してください。
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">最新の試合結果</h2>
+                <div id="last-match-result" class="text-sm text-slate-300 italic mb-2">まだ試合は行われていません。</div>
+                <div class="log-container bg-dark-900 border border-dark-700 rounded p-3 text-xs font-mono text-slate-300 space-y-1" id="match-logs">
+                    <div>> GM就任。ペナントレース開幕へ向けて準備をしてください。</div>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-4 rounded-xl">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">フロント人事・施設投資</h2>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <button onclick="Game.hireStaff('manager')" class="bg-dark-700 hover:bg-dark-600 p-2 rounded border border-dark-700 flex flex-col items-center">
+                        <span class="text-lg">👔</span> <span>優秀な監督を招聘</span> <span class="text-xs text-slate-400">¥1.0億</span>
+                    </button>
+                    <button onclick="Game.hireStaff('sales')" class="bg-dark-700 hover:bg-dark-600 p-2 rounded border border-dark-700 flex flex-col items-center">
+                        <span class="text-lg">💼</span> <span>凄腕営業を雇用</span> <span class="text-xs text-slate-400">¥0.5億</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-roster" class="tab-content space-y-4">
+            <div class="glass-panel p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-3 border-b border-dark-700 pb-1">
+                    <h2 class="text-sm font-bold text-slate-400">スタメン編成</h2>
+                    <button onclick="Roster.autoSet()" class="px-3 py-1 bg-dark-700 hover:bg-dark-600 text-white text-xs rounded border border-dark-700 transition-colors">AIおまかせ編成</button>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">※適性外(E以下)や利き腕ルール違反のポジションに配置するとエラー率が激増します。</p>
+                
+                <div id="lineup-builder" class="space-y-2">
+                    <!-- Lineup slots injected via JS -->
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">所属選手一覧 (ベンチ・二軍)</h2>
+                <div id="roster-list" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                    <!-- Player cards injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-league" class="tab-content space-y-4">
+            <div class="glass-panel p-4 rounded-xl overflow-x-auto">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">ペナントレース順位表</h2>
+                <table class="w-full text-sm text-left text-slate-300">
+                    <thead class="text-xs text-slate-400 bg-dark-900">
+                        <tr>
+                            <th class="px-2 py-2 rounded-tl">順位</th>
+                            <th class="px-2 py-2">チーム</th>
+                            <th class="px-2 py-2">勝</th>
+                            <th class="px-2 py-2">敗</th>
+                            <th class="px-2 py-2">分</th>
+                            <th class="px-2 py-2 rounded-tr">ゲーム差</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-body">
+                        <!-- Standings injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl">
+                <h2 class="text-sm font-bold text-slate-400 mb-3 border-b border-dark-700 pb-1">自球団 個人成績 (スタッツ)</h2>
+                <div class="text-xs mb-2">規定打席・投球回到達者のみ上位表示</div>
+                <div id="stats-container" class="space-y-4 text-sm text-slate-300">
+                    <!-- Stats injected via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Utils & Constants ---
+        const Utils = {
+            randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+            formatMoney: (num) => `¥${(num / 10000).toFixed(1)}億`
+        };
+
+        const POSITIONS = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
+        const COND_LABELS = ["絶不調", "不調", "普通", "好調", "絶好調"];
+        const COND_COLORS = ["text-indigo-400", "text-blue-400", "text-slate-300", "text-red-400", "text-pink-400 font-bold"];
+
+        // --- Data Models ---
+        class Player {
+            constructor(isPitcher, nameStr = null) {
+                const names = ["鈴木", "佐藤", "田中", "高橋", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "佐々木", "山口", "松本"];
+                this.id = 'p_' + Math.random().toString(36).substr(2, 9);
+                this.name = nameStr || names[Utils.randomInt(0, names.length - 1)];
+                this.isPitcher = isPitcher;
+                this.age = Utils.randomInt(18, 35);
+                this.fatigue = 0; // 0-100
+                this.condition = 2; // 0-4
+                this.injuryDays = 0;
+
+                // Handedness: Lefties ~30%
+                this.throws = Math.random() < 0.3 ? 'L' : 'R';
+                this.bats = Math.random() < 0.4 ? 'L' : (Math.random() < 0.1 ? 'S' : 'R');
+
+                // Base Stats (1-100)
+                this.stats = {
+                    contact: Utils.randomInt(30, 85),
+                    power: Utils.randomInt(20, 85),
+                    defense: Utils.randomInt(30, 90),
+                    pitching: isPitcher ? Utils.randomInt(40, 95) : 10
+                };
+                this.salary = Math.floor((this.stats.contact + this.stats.power + this.stats.defense + this.stats.pitching) * 0.5); // in 10,000s (万円)
+
+                // Season Stats Tracking
+                this.seasonStats = {
+                    games: 0, ab: 0, hits: 0, hr: 0, rbi: 0, // Batter
+                    ip: 0, er: 0, so: 0, bb: 0 // Pitcher
+                };
+
+                this.aptitude = {};
+                this.generateAptitude();
+            }
+
+            generateAptitude() {
+                if (this.isPitcher) {
+                    this.mainPos = "P";
+                    this.aptitude["P"] = this.getRank(this.stats.pitching);
+                    return;
+                }
+
+                // Fielders strict rule
+                let possibleMains = ["1B", "LF", "CF", "RF"];
+                if (this.throws === 'R') possibleMains.push("C", "2B", "3B", "SS");
+                
+                this.mainPos = possibleMains[Utils.randomInt(0, possibleMains.length - 1)];
+                
+                // Calculate all aptitudes based on defense & penalties
+                POSITIONS.forEach(pos => {
+                    if (pos === "P") { this.aptitude[pos] = "G"; return; }
+                    
+                    // Lefty penalty
+                    if (this.throws === 'L' && ["C", "2B", "3B", "SS"].includes(pos)) {
+                        this.aptitude[pos] = "G";
+                        return;
+                    }
+
+                    if (pos === this.mainPos) {
+                        this.aptitude[pos] = this.getRank(this.stats.defense);
+                    } else {
+                        // Sub position penalty
+                        let penalty = 20;
+                        if (["LF","CF","RF"].includes(this.mainPos) && ["LF","CF","RF"].includes(pos)) penalty = 10;
+                        if (["2B","SS"].includes(this.mainPos) && ["2B","SS"].includes(pos)) penalty = 10;
+                        this.aptitude[pos] = this.getRank(this.stats.defense - penalty);
+                    }
+                });
+            }
+
+            getRank(val) {
+                if (val >= 80) return 'S';
+                if (val >= 70) return 'A';
+                if (val >= 60) return 'B';
+                if (val >= 50) return 'C';
+                if (val >= 40) return 'D';
+                if (val >= 30) return 'E';
+                if (val >= 20) return 'F';
+                return 'G';
+            }
+
+            getEffectiveOvr(isBatting) {
+                if (this.injuryDays > 0) return 10; // Injured
+                // Condition modifier: -10% to +10%
+                const condMod = 1 + ((this.condition - 2) * 0.05);
+                // Fatigue modifier: Drops sharply if > 80
+                const fatMod = this.fatigue > 80 ? 0.7 : (this.fatigue > 60 ? 0.9 : 1.0);
+                
+                let base = isBatting ? ((this.stats.contact + this.stats.power) / 2) : this.stats.pitching;
+                return Math.floor(base * condMod * fatMod);
+            }
+
+            getAvg() { return this.seasonStats.ab > 0 ? (this.seasonStats.hits / this.seasonStats.ab).toFixed(3) : ".000"; }
+            getEra() { return this.seasonStats.ip > 0 ? ((this.seasonStats.er * 9) / (this.seasonStats.ip / 3)).toFixed(2) : "0.00"; }
+        }
+
+        class Team {
+            constructor(name, isPlayer = false) {
+                this.name = name;
+                this.isPlayer = isPlayer;
+                this.roster = [];
+                this.wins = 0;
+                this.losses = 0;
+                this.draws = 0;
+                this.lineup = Array(9).fill(null); // [ {playerId, pos}, ... ]
+                this.sp = null; // playerId
+
+                // Generate Roster
+                for(let i=0; i<14; i++) this.roster.push(new Player(false));
+                for(let i=0; i<8; i++) this.roster.push(new Player(true));
+                
+                if(!isPlayer) this.autoSetLineup();
+            }
+
+            autoSetLineup() {
+                // Simple AI: Sort by OVR, assign valid positions
+                let availableFielders = this.roster.filter(p => !p.isPitcher && p.injuryDays === 0).sort((a,b) => b.getEffectiveOvr(true) - a.getEffectiveOvr(true));
+                let availablePitchers = this.roster.filter(p => p.isPitcher && p.fatigue < 50 && p.injuryDays === 0).sort((a,b) => b.getEffectiveOvr(false) - a.getEffectiveOvr(false));
+                
+                this.sp = availablePitchers.length > 0 ? availablePitchers[0].id : this.roster.find(p=>p.isPitcher).id;
+                
+                // Assign positions roughly based on mainPos
+                let filledPositions = new Set();
+                this.lineup = Array(9).fill(null);
+                
+                for(let i=0; i<9; i++) {
+                    if (i >= availableFielders.length) break; // Not enough players
+                    let p = availableFielders[i];
+                    let assignedPos = "DH"; // fallback
+                    if (!filledPositions.has(p.mainPos)) {
+                        assignedPos = p.mainPos;
+                    } else {
+                        // Find first available pos they have at least D in
+                        for (let pos of POSITIONS) {
+                            if (pos !== "P" && !filledPositions.has(pos) && ["S","A","B","C","D"].includes(p.aptitude[pos])) {
+                                assignedPos = pos; break;
+                            }
+                        }
+                    }
+                    filledPositions.add(assignedPos);
+                    this.lineup[i] = { id: p.id, pos: assignedPos };
+                }
+            }
+
+            isValidLineup() {
+                if (!this.sp) return false;
+                for (let i=0; i<9; i++) {
+                    if (!this.lineup[i] || !this.lineup[i].id || !this.lineup[i].pos) return false;
+                }
+                // Check duplicates
+                let ids = this.lineup.map(l => l.id);
+                ids.push(this.sp);
+                return new Set(ids).size === 10;
+            }
+        }
+
+        // --- Core State ---
+        const State = {
+            date: new Date(2025, 2, 1), // March 1st
+            funds: 5000, // in 10k (5億)
+            trust: 100,
+            teams: [],
+            myTeam: null,
+            staff: { manager: false, sales: false },
+            schedule: [], // [ {t1, t2}, ... ] per day
+            logs: []
+        };
+
+        // --- Engine & Logic ---
+        const Engine = {
+            initLeague: () => {
+                State.teams.push(new Team("東京ダイアモンズ", true));
+                State.myTeam = State.teams[0];
+                State.teams.push(new Team("大阪タイガース"));
+                State.teams.push(new Team("横浜スターズ"));
+                State.teams.push(new Team("福岡ホークス"));
+                State.teams.push(new Team("札幌ベアーズ"));
+                State.teams.push(new Team("名古屋ドラゴンズ"));
+            },
+
+            simulateMatch: (t1, t2, isPlayerMatch) => {
+                let s1 = 0, s2 = 0;
+                let highlights = [];
+                
+                if (!t1.isValidLineup()) t1.autoSetLineup();
+                if (!t2.isValidLineup()) t2.autoSetLineup();
+
+                let p1 = t1.roster.find(p => p.id === t1.sp);
+                let p2 = t2.roster.find(p => p.id === t2.sp);
+                
+                // Add fatigue to pitchers
+                p1.fatigue += Utils.randomInt(30, 50);
+                p2.fatigue += Utils.randomInt(30, 50);
+                p1.seasonStats.games++; p2.seasonStats.games++;
+
+                for (let inn = 1; inn <= 9; inn++) {
+                    let r1 = Engine.simInning(t1, p2, inn, highlights, t1.isPlayer || t2.isPlayer);
+                    let r2 = Engine.simInning(t2, p1, inn, highlights, t1.isPlayer || t2.isPlayer);
+                    s1 += r1; s2 += r2;
+                }
+
+                if (s1 > s2) { t1.wins++; t2.losses++; }
+                else if (s2 > s1) { t2.wins++; t1.losses++; }
+                else { t1.draws++; t2.draws++; }
+
+                // Post match logic for player team
+                if (isPlayerMatch) {
+                    let resultStr = s1 > s2 ? '勝利' : (s1 < s2 ? '敗北' : '引分');
+                    let logStr = `【試合結果】 ${t1.name} ${s1} - ${s2} ${t2.name} (${resultStr})`;
+                    UI.addLog(logStr);
+                    if(highlights.length > 0) UI.addLog("ハイライト: " + highlights[Utils.randomInt(0, highlights.length-1)]);
+                    
+                    document.getElementById('last-match-result').innerHTML = `<span class="${s1>s2?'text-success':'text-danger'} font-bold">${logStr}</span>`;
+                    
+                    // Income
+                    let income = s1 > s2 ? Utils.randomInt(100, 300) : Utils.randomInt(50, 150);
+                    if (State.staff.sales) income = Math.floor(income * 1.5);
+                    State.funds += income;
+                    
+                    // Trust
+                    if (s1 > s2) State.trust = Math.min(100, State.trust + 2);
+                    else if (s1 < s2) State.trust = Math.max(0, State.trust - 1);
+                }
+            },
+
+            simInning: (batTeam, pitcher, inn, highlights, isPlayerMatch) => {
+                let runs = 0, outs = 0, bases = 0; // bases: simple counter for runners
+                
+                // Simplified 1-at-bat logic 
+                for(let i=0; i<3; i++) { // Rough avg 4 batters per inn
+                    // Pick a random batter from lineup (abstracted for speed)
+                    let lineupSlot = batTeam.lineup[Utils.randomInt(0, 8)];
+                    let batter = batTeam.roster.find(p => p.id === lineupSlot.id);
+                    if(!batter) continue;
+
+                    batter.seasonStats.ab++;
+                    batter.fatigue += Utils.randomInt(1, 3);
+
+                    // Calc probabilities
+                    let batOvr = batter.getEffectiveOvr(true);
+                    let pitOvr = pitcher.getEffectiveOvr(false);
+                    
+                    // L vs L penalty
+                    if (batter.bats === 'L' && pitcher.throws === 'L') batOvr *= 0.9;
+
+                    // Aptitude penalty
+                    if (["E","F","G"].includes(batter.aptitude[lineupSlot.pos])) {
+                        pitOvr *= 1.2; // Massive disadvantage due to poor fielding causing errors
+                        if (isPlayerMatch && Utils.randomInt(1,10) === 1) {
+                            highlights.push(`適性外の${batter.name}が痛恨のエラー！`);
+                        }
+                    }
+
+                    // Win probability for batter
+                    let winProb = (batOvr / (batOvr + pitOvr)) * 100;
+                    let roll = Utils.randomInt(1, 100);
+
+                    if (roll < winProb * 0.6) { // Hit
+                        batter.seasonStats.hits++;
+                        pitcher.seasonStats.ip += 1;
+                        if (roll < winProb * 0.1) { // HR
+                            batter.seasonStats.hr++;
+                            batter.seasonStats.rbi += (bases + 1);
+                            pitcher.seasonStats.er += (bases + 1);
+                            runs += (bases + 1);
+                            bases = 0;
+                            if (isPlayerMatch) highlights.push(`${inn}回: ${batter.name}のホームラン！`);
+                        } else {
+                            bases++;
+                            if (bases > 3) {
+                                runs++; bases = 3;
+                                batter.seasonStats.rbi++;
+                                pitcher.seasonStats.er++;
+                            }
+                        }
+                    } else {
+                        outs++;
+                        pitcher.seasonStats.ip += 1;
+                        if(Utils.randomInt(1,100)<20) pitcher.seasonStats.so++;
+                    }
+                    if (outs >= 3) break;
+                }
+                return runs;
+            }
+        };
+
+        // --- Event Manager ---
+        const EventManager = {
+            checkDailyEvents: () => {
+                // 15% chance per day
+                if (Utils.randomInt(1, 100) > 15) return;
+
+                let r = Utils.randomInt(1, 100);
+                if (r <= 40) {
+                    // Injury
+                    let p = State.myTeam.roster[Utils.randomInt(0, State.myTeam.roster.length - 1)];
+                    if (p.injuryDays === 0) {
+                        p.injuryDays = Utils.randomInt(3, 14);
+                        UI.showModal("⚠️ 故障発生", `${p.name}選手が練習中に負傷しました。全治 ${p.injuryDays} 日の見込みです。スタメンから外してください。`);
+                    }
+                } else if (r <= 70) {
+                    // Slump / Hot streak
+                    let p = State.myTeam.roster[Utils.randomInt(0, State.myTeam.roster.length - 1)];
+                    if (Utils.randomInt(0,1) === 0) {
+                        p.condition = 4;
+                        UI.showModal("🔥 絶好調", `${p.name}選手が打撃のコツを掴んだようです！`);
+                    } else {
+                        p.condition = 0;
+                        UI.showModal("📉 スランプ", `${p.name}選手が深刻なスランプに陥っています...`);
+                    }
+                } else if (r <= 90) {
+                    // Sponsor
+                    let amt = Utils.randomInt(100, 500);
+                    State.funds += amt;
+                    UI.showModal("💰 臨時収入", `地元企業からスポンサー料として ¥${(amt/10000).toFixed(1)}億円 が振り込まれました。`);
+                } else {
+                    // Owner
+                    State.trust -= 5;
+                    UI.showModal("😤 オーナーからのプレッシャー", `「最近の戦いぶりは何だ！もっとファンを喜ばせろ！」支持率が低下しました。`);
+                }
+            },
+
+            checkMonthlyFinance: () => {
+                // Calculate expenses
+                let salaryTotal = State.myTeam.roster.reduce((sum, p) => sum + p.salary, 0);
+                let facilityCost = State.staff.manager ? 100 : 0;
+                facilityCost += State.staff.sales ? 50 : 0;
+                let totalExp = salaryTotal + facilityCost;
+                
+                // Base Monthly Income
+                let baseInc = 500;
+                
+                State.funds = State.funds + baseInc - totalExp;
+                
+                UI.showModal("📊 月次決算報告", `
+                    <p class="mb-2 font-bold">${State.date.getMonth()}月度の決算が完了しました。</p>
+                    <ul class="space-y-1 mb-2">
+                        <li>基本収益: +¥${(baseInc/10000).toFixed(1)}億</li>
+                        <li class="text-danger">選手年俸: -¥${(salaryTotal/10000).toFixed(1)}億</li>
+                        <li class="text-danger">施設・人件費: -¥${(facilityCost/10000).toFixed(1)}億</li>
+                    </ul>
+                    <p class="font-bold border-t border-dark-700 pt-2">現在資金: ¥${(State.funds/10000).toFixed(1)}億円</p>
+                `);
+
+                if (State.funds < 0) {
+                    State.trust -= 20;
+                    UI.showModal("🚨 資金ショート警告", "資金がマイナスに陥りました！この状態が続くとオーナーに解任されます。");
+                }
+            }
+        };
+
+        // --- Game Controller ---
+        const Game = {
+            init: () => {
+                Engine.initLeague();
+                UI.initTabs();
+                UI.renderAll();
+            },
+
+            advanceTime: async (skipType) => {
+                if (!State.myTeam.isValidLineup()) {
+                    document.getElementById('lineup-warning').classList.remove('hidden');
+                    UI.switchTab(document.querySelector('[data-target="tab-roster"]'));
+                    return;
+                }
+                document.getElementById('lineup-warning').classList.add('hidden');
+
+                let daysToSkip = 1;
+                if (skipType === 7) daysToSkip = 7;
+                if (skipType === 'month') {
+                    // Skip to end of current month
+                    let curMonth = State.date.getMonth();
+                    let tempDate = new Date(State.date);
+                    while(tempDate.getMonth() === curMonth) {
+                        daysToSkip++;
+                        tempDate.setDate(tempDate.getDate() + 1);
+                    }
+                    daysToSkip -= 1; // Don't jump into next month completely in one tick
+                }
+
+                UI.showLoader();
+                
+                // Allow UI to paint loader
+                await new Promise(r => setTimeout(r, 50));
+
+                let monthChanged = false;
+
+                for (let i = 0; i < daysToSkip; i++) {
+                    let oldMonth = State.date.getMonth();
+                    
+                    // Daily processing
+                    State.date.setDate(State.date.getDate() + 1);
+                    
+                    // Recover fatigue & injury
+                    State.teams.forEach(t => {
+                        t.roster.forEach(p => {
+                            p.fatigue = Math.max(0, p.fatigue - Utils.randomInt(5, 10));
+                            if (p.injuryDays > 0) p.injuryDays--;
+                            // Condition shift chance
+                            if (Utils.randomInt(1,10) === 1) p.condition = Math.max(0, Math.min(4, p.condition + Utils.randomInt(-1, 1)));
+                        });
+                    });
+
+                    // Simulate 3 matches a day roughly (all 6 teams play)
+                    Engine.simulateMatch(State.teams[0], State.teams[1], true);
+                    Engine.simulateMatch(State.teams[2], State.teams[3], false);
+                    Engine.simulateMatch(State.teams[4], State.teams[5], false);
+
+                    EventManager.checkDailyEvents();
+
+                    if (State.date.getMonth() !== oldMonth) monthChanged = true;
+                    
+                    if(State.trust <= 0) {
+                        UI.hideLoader();
+                        UI.showModal("💀 解任...", "オーナーからの支持率が0%になりました。あなたはGMを解任されました。ゲームオーバーです。");
+                        return; // Stop loop
+                    }
+                }
+
+                if (monthChanged) EventManager.checkMonthlyFinance();
+
+                UI.renderAll();
+                UI.hideLoader();
+            },
+
+            hireStaff: (type) => {
+                if (type === 'manager' && !State.staff.manager) {
+                    if (State.funds >= 1000) {
+                        State.funds -= 1000;
+                        State.staff.manager = true;
+                        UI.showModal("✅ 雇用完了", "優秀な監督を招聘しました。選手の成長やAI采配が改善されます。");
+                    } else UI.showModal("❌ 資金不足", "資金が足りません。");
+                }
+                if (type === 'sales' && !State.staff.sales) {
+                    if (State.funds >= 500) {
+                        State.funds -= 500;
+                        State.staff.sales = true;
+                        UI.showModal("✅ 雇用完了", "凄腕営業を雇用しました。毎試合の観客収入・スポンサー収入が1.5倍になります。");
+                    } else UI.showModal("❌ 資金不足", "資金が足りません。");
+                }
+                UI.renderDashboard();
+            }
+        };
+
+        // --- Roster Controller ---
+        const Roster = {
+            autoSet: () => {
+                State.myTeam.autoSetLineup();
+                document.getElementById('lineup-warning').classList.add('hidden');
+                UI.renderRoster();
+                UI.addLog("> AIコーチが疲労と調子を考慮して最適なスタメンを編成しました。");
+            },
+            
+            updateSlot: (index, type, value) => {
+                if (index === 'sp') {
+                    State.myTeam.sp = value;
+                } else {
+                    if(type === 'id') State.myTeam.lineup[index].id = value;
+                    if(type === 'pos') State.myTeam.lineup[index].pos = value;
+                }
+                UI.renderRoster(); // Re-render to show warnings if any
+            }
+        };
+
+        // --- UI Controller ---
+        const UI = {
+            initTabs: () => {
+                // Initialize default tab
+                document.querySelector('[data-target="tab-dash"]').classList.add('text-brand-500', 'border-brand-500');
+            },
+
+            switchTab: (btn) => {
+                document.querySelectorAll('nav button').forEach(b => {
+                    b.classList.remove('text-brand-500', 'border-brand-500');
+                    b.classList.add('text-slate-400', 'border-transparent');
+                });
+                btn.classList.add('text-brand-500', 'border-brand-500');
+                btn.classList.remove('text-slate-400', 'border-transparent');
+                
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+            },
+
+            showModal: (title, htmlContent) => {
+                document.getElementById('modal-title').innerText = title.substring(2).trim();
+                document.getElementById('modal-icon').innerText = title.substring(0,2).trim();
+                document.getElementById('modal-body').innerHTML = htmlContent;
+                document.getElementById('modal-overlay').classList.remove('hidden');
+            },
+            
+            closeModal: () => {
+                document.getElementById('modal-overlay').classList.add('hidden');
+            },
+
+            showLoader: () => document.getElementById('loader').style.display = 'flex',
+            hideLoader: () => document.getElementById('loader').style.display = 'none',
+
+            addLog: (msg) => {
+                let c = document.getElementById('match-logs');
+                c.innerHTML = `<div>> ${msg}</div>` + c.innerHTML;
+            },
+
+            renderAll: () => {
+                UI.renderHeader();
+                UI.renderDashboard();
+                UI.renderRoster();
+                UI.renderLeague();
+            },
+
+            renderHeader: () => {
+                document.getElementById('ui-date').innerText = `${State.date.getMonth()+1}月${State.date.getDate()}日`;
+                document.getElementById('ui-funds').innerText = Utils.formatMoney(State.funds);
+                document.getElementById('ui-trust').innerText = State.trust;
+                document.getElementById('ui-record').innerText = `${State.myTeam.wins}勝${State.myTeam.losses}敗`;
+                
+                // Calc rank
+                let sorted = [...State.teams].sort((a,b) => (b.wins - b.losses) - (a.wins - a.losses));
+                let myRank = sorted.findIndex(t => t.isPlayer) + 1;
+                document.getElementById('ui-rank').innerText = `${myRank}位`;
+            },
+
+            renderDashboard: () => {
+                // Dashboard is mostly static or updated via events, just update state specifics if needed
+            },
+
+            renderRoster: () => {
+                const bContainer = document.getElementById('lineup-builder');
+                const rContainer = document.getElementById('roster-list');
+                bContainer.innerHTML = ''; rContainer.innerHTML = '';
+
+                // Build Pitcher Slot
+                let spSelectHTML = `<select onchange="Roster.updateSlot('sp', 'id', this.value)" class="bg-dark-900 border border-dark-700 text-xs p-1 rounded w-full">`;
+                State.myTeam.roster.filter(p=>p.isPitcher).forEach(p => {
+                    spSelectHTML += `<option value="${p.id}" ${State.myTeam.sp === p.id ? 'selected' : ''}>${p.name} (投:${p.throws}) 疲労:${p.fatigue}%</option>`;
+                });
+                spSelectHTML += `</select>`;
+                
+                bContainer.innerHTML += `
+                    <div class="flex items-center gap-2 bg-dark-900 p-2 rounded border border-dark-700">
+                        <span class="w-8 text-center font-bold text-amber-400">先発</span>
+                        <div class="flex-1">${spSelectHTML}</div>
+                    </div>`;
+
+                // Build 1-9 Slots
+                let fielders = State.myTeam.roster.filter(p=>!p.isPitcher);
+                for (let i=0; i<9; i++) {
+                    let slot = State.myTeam.lineup[i] || {id:'', pos:'DH'};
+                    
+                    let pSelectHTML = `<select onchange="Roster.updateSlot(${i}, 'id', this.value)" class="bg-dark-900 border border-dark-700 text-xs p-1 rounded flex-1 w-24">`;
+                    pSelectHTML += `<option value="">選択...</option>`;
+                    fielders.forEach(p => {
+                        let selected = slot.id === p.id ? 'selected' : '';
+                        pSelectHTML += `<option value="${p.id}" ${selected}>${p.name} (打:${p.bats})</option>`;
+                    });
+                    pSelectHTML += `</select>`;
+
+                    let posSelectHTML = `<select onchange="Roster.updateSlot(${i}, 'pos', this.value)" class="bg-dark-900 border border-dark-700 text-xs p-1 rounded w-16">`;
+                    POSITIONS.forEach(pos => {
+                        if(pos !== "P") posSelectHTML += `<option value="${pos}" ${slot.pos === pos ? 'selected' : ''}>${pos}</option>`;
+                    });
+                    posSelectHTML += `<option value="DH" ${slot.pos === 'DH' ? 'selected' : ''}>DH</option></select>`;
+
+                    // Warning check
+                    let warnHTML = "";
+                    if (slot.id) {
+                        let pObj = fielders.find(p=>p.id === slot.id);
+                        if (pObj && pObj.injuryDays > 0) warnHTML = `<span class="text-xs text-danger font-bold text-center w-full block">故障中!</span>`;
+                        else if (pObj && slot.pos !== "DH" && ["E","F","G"].includes(pObj.aptitude[slot.pos])) {
+                            warnHTML = `<span class="text-xs text-danger font-bold text-center w-full block bg-red-900 bg-opacity-20 mt-1">⚠️ 適性${pObj.aptitude[slot.pos]}</span>`;
+                        }
+                    }
+
+                    bContainer.innerHTML += `
+                        <div class="bg-dark-800 p-2 rounded border border-dark-700">
+                            <div class="flex items-center gap-1">
+                                <span class="w-4 text-center font-bold text-slate-400">${i+1}</span>
+                                ${posSelectHTML}
+                                ${pSelectHTML}
+                            </div>
+                            ${warnHTML}
+                        </div>`;
+                }
+
+                // Render Roster List (Cards)
+                State.myTeam.roster.forEach(p => {
+                    let cond = COND_LABELS[p.condition];
+                    let condClass = COND_COLORS[p.condition];
+                    let isLineup = State.myTeam.sp === p.id || State.myTeam.lineup.some(l => l && l.id === p.id);
+                    let badge = isLineup ? `<span class="text-[10px] bg-brand-600 text-white px-1 rounded">スタメン</span>` : ``;
+                    if (p.injuryDays > 0) badge = `<span class="text-[10px] bg-danger text-white px-1 rounded">故障(${p.injuryDays}日)</span>`;
+
+                    let aptList = p.isPitcher ? `P:${p.aptitude["P"]}` : `本職:${p.mainPos} (${p.aptitude[p.mainPos]})`;
+
+                    rContainer.innerHTML += `
+                        <div class="bg-dark-900 border border-dark-700 p-2 rounded text-xs flex justify-between items-center ${p.injuryDays>0?'opacity-50':''}">
+                            <div>
+                                <div class="font-bold text-sm mb-1">${p.name} ${badge}</div>
+                                <div class="text-slate-400">投/打: ${p.throws}/${p.bats} | 疲労: ${p.fatigue}% | <span class="${condClass}">${cond}</span></div>
+                                <div class="text-slate-400">${aptList}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-brand-500">OVR: ${p.getEffectiveOvr(!p.isPitcher)}</div>
+                                <div class="text-slate-500">年俸: ¥${(p.salary/10000).toFixed(1)}億</div>
+                            </div>
+                        </div>`;
+                });
+            },
+
+            renderLeague: () => {
+                const tbody = document.getElementById('standings-body');
+                tbody.innerHTML = '';
+                
+                // Sort by win margin
+                let sorted = [...State.teams].sort((a,b) => {
+                    let aMargin = a.wins - a.losses;
+                    let bMargin = b.wins - b.losses;
+                    return bMargin - aMargin;
+                });
+
+                let topMargin = sorted[0].wins - sorted[0].losses;
+
+                sorted.forEach((t, i) => {
+                    let gb = ((topMargin - (t.wins - t.losses)) / 2).toFixed(1);
+                    if (i === 0) gb = "-";
+                    
+                    let bg = t.isPlayer ? 'bg-brand-900 bg-opacity-20' : 'border-b border-dark-700';
+                    tbody.innerHTML += `
+                        <tr class="${bg}">
+                            <td class="px-2 py-2">${i+1}</td>
+                            <td class="px-2 py-2 font-bold ${t.isPlayer?'text-brand-400':''}">${t.name}</td>
+                            <td class="px-2 py-2">${t.wins}</td>
+                            <td class="px-2 py-2">${t.losses}</td>
+                            <td class="px-2 py-2">${t.draws}</td>
+                            <td class="px-2 py-2">${gb}</td>
+                        </tr>`;
+                });
+
+                // Stats
+                const sContainer = document.getElementById('stats-container');
+                sContainer.innerHTML = '';
+                
+                let batters = State.myTeam.roster.filter(p=>!p.isPitcher).sort((a,b) => b.getAvg() - a.getAvg());
+                let pitchers = State.myTeam.roster.filter(p=>p.isPitcher).sort((a,b) => a.getEra() - b.getEra());
+
+                sContainer.innerHTML += `<div class="font-bold border-b border-dark-700 pb-1 mt-2 text-brand-400">打者成績 (打率順)</div>`;
+                for(let i=0; i<Math.min(3, batters.length); i++) {
+                    let b = batters[i];
+                    sContainer.innerHTML += `
+                        <div class="flex justify-between items-center text-xs py-1 border-b border-dark-700 border-opacity-50">
+                            <span>${b.name} (${b.seasonStats.ab}打数)</span>
+                            <span class="font-mono">率: ${b.getAvg()} | ${b.seasonStats.hr}本 | ${b.seasonStats.rbi}打点</span>
+                        </div>`;
+                }
+
+                sContainer.innerHTML += `<div class="font-bold border-b border-dark-700 pb-1 mt-4 text-brand-400">投手成績 (防御率順)</div>`;
+                for(let i=0; i<Math.min(3, pitchers.length); i++) {
+                    let p = pitchers[i];
+                    sContainer.innerHTML += `
+                        <div class="flex justify-between items-center text-xs py-1 border-b border-dark-700 border-opacity-50">
+                            <span>${p.name} (${(p.seasonStats.ip/3).toFixed(1)}回)</span>
+                            <span class="font-mono">防: ${p.getEra()} | ${p.seasonStats.so}奪三振</span>
+                        </div>`;
+                }
+            }
+        };
+
+        // --- Start Game ---
+        window.onload = Game.init;
+    </script>
 </body>
 </html>
