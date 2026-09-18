@@ -3,307 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diamond Executive - Beta V3 -</title>
-    <style>
-        :root {
-            --bg-base: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8;
-            --accent: #3b82f6; --accent-hover: #2563eb; --btn-green: #10b981; --danger: #ef4444;
-            --border-color: #334155; --warning: #f59e0b;
-        }
-        body {
-            background-color: var(--bg-base); color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
-            margin: 0; display: flex; justify-content: center;
-        }
-        #app { width: 100%; max-width: 600px; min-height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Header */
-        header { background-color: var(--bg-card); padding: 15px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
-        .header-title { margin: 0 0 10px 0; font-size: 1.2rem; color: #60a5fa; text-align: center; }
-        .calendar-display { text-align: center; font-size: 1.2rem; font-weight: bold; color: #fbbf24; margin-bottom: 10px; }
-        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
-        .status-item { background: rgba(0,0,0,0.3); padding: 8px 4px; border-radius: 6px; font-size: 0.75rem; color: var(--text-sub); }
-        .status-val { display: block; font-size: 1.1rem; font-weight: bold; color: #fff; margin-top: 2px; }
-
-        /* Tabs */
-        .tabs { display: flex; border-bottom: 1px solid var(--border-color); background-color: var(--bg-card); }
-        .tab-btn { flex: 1; padding: 12px 0; background: none; border: none; color: var(--text-sub); font-weight: bold; cursor: pointer; }
-        .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); }
-        .tab-content { display: none; padding: 15px; flex: 1; overflow-y: auto; }
-        .tab-content.active { display: block; }
-
-        /* General UI */
-        .section-title { font-size: 1rem; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin: 0 0 10px 0; color: var(--text-sub); }
-        button { padding: 12px; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; color: #fff; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        button:disabled { background-color: #475569 !important; color: #94a3b8; cursor: not-allowed; }
-        .btn-action { background-color: var(--accent); }
-        .btn-scout { background-color: var(--btn-green); }
-        .alert-box { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; }
-
-        /* Logs & Cards */
-        .log-window { background-color: #000; color: #4ade80; font-family: monospace; font-size: 0.85rem; padding: 12px; height: 150px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border-color); line-height: 1.5; }
-        .log-entry { margin-bottom: 6px; border-bottom: 1px dashed #333; padding-bottom: 4px; }
-        .player-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 0.9rem; }
-        .p-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
-        .p-tags { display: flex; gap: 5px; font-size: 0.7rem; margin-bottom: 5px; }
-        .tag { padding: 2px 6px; border-radius: 4px; background: #334155; color: #fff; }
-        .tag-S { color: #fbbf24; }
-    </style>
+    <title>Diamond Executive - Beta V4 -</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="app">
         <header>
-            <h1 class="header-title">Diamond Executive V3</h1>
-            <div class="calendar-display" id="current-date">1年目 2月 (春季キャンプ)</div>
+            <h1 class="header-title">Diamond Executive <span id="owner-trust">支持率:100%</span></h1>
+            <div class="calendar-display" id="current-date">1年目 3月 (開幕)</div>
             <div class="status-grid">
-                <div class="status-item">資金<span class="status-val" id="funds">¥1000万</span></div>
+                <div class="status-item">資金<span class="status-val" id="funds">¥5000万</span></div>
                 <div class="status-item">成績<span class="status-val" id="record">0勝0敗</span></div>
-                <div class="status-item">支配下枠<span class="status-val" id="roster-count">0/70</span></div>
+                <div class="status-item">人気度<span class="status-val" id="popularity">D</span></div>
             </div>
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-dash')">GMデスク</button>
-            <button class="tab-btn" onclick="switchTab('tab-roster')">編成・起用</button>
-            <button class="tab-btn" onclick="switchTab('tab-front')">フロント業務</button>
+            <button class="tab-btn active" onclick="app.switchTab('tab-dash')">GMデスク</button>
+            <button class="tab-btn" onclick="app.switchTab('tab-roster')">編成(スタメン)</button>
+            <button class="tab-btn" onclick="app.switchTab('tab-front')">フロント人事</button>
         </div>
 
-        <!-- タブ1: GMデスク (メイン進行) -->
+        <!-- タブ1: GMデスク (試合と進行) -->
         <div id="tab-dash" class="tab-content active">
-            <div class="alert-box" id="validation-alert">⚠️ エラーメッセージ</div>
+            <div class="alert-box" id="validation-alert">⚠️ エラー</div>
             
-            <h2 class="section-title">スケジュール進行</h2>
-            <button id="btn-next-phase" class="btn-action" onclick="advancePhase()">月間スケジュールを進行する</button>
+            <h2 class="section-title">本日のスケジュール</h2>
+            <div class="match-modes">
+                <button class="btn-action" onclick="app.playMatch(1)">⚾ 1球進行 (観戦)</button>
+                <button class="btn-action" onclick="app.playMatch(2)">⚾ ダイジェスト</button>
+                <button class="btn-action" onclick="app.playMatch(3)">⚾ 結果スキップ</button>
+            </div>
+            <button class="btn-secondary" onclick="app.advanceDay()">試合なしで1日進む</button>
             
-            <h2 class="section-title">システムログ</h2>
+            <h2 class="section-title">実況・システムログ</h2>
             <div class="log-window" id="log-window"></div>
         </div>
 
-        <!-- タブ2: 編成・起用 -->
+        <!-- タブ2: 編成 (スタメンと適性) -->
         <div id="tab-roster" class="tab-content">
-            <h2 class="section-title">チーム編成状況</h2>
-            <button id="btn-auto-order" class="btn-action" style="background-color: #6366f1;" onclick="autoSetOrder()">自動でスタメンを組む</button>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">※試合を行うには、最低でも野手9名、投手1名が「スタメン設定」されている必要があります。</p>
+            <h2 class="section-title">スタメンオーダー</h2>
+            <button class="btn-secondary" onclick="app.autoSetOrder()">AI自動編成</button>
+            <div id="order-list" class="roster-grid"></div>
             
-            <div id="roster-list"></div>
+            <h2 class="section-title">ベンチ・控え</h2>
+            <div id="bench-list" class="roster-grid"></div>
         </div>
 
-        <!-- タブ3: フロント業務 (ドラフト・FAなど) -->
+        <!-- タブ3: フロント人事と投資 -->
         <div id="tab-front" class="tab-content">
-            <h2 class="section-title">スカウティング</h2>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">※シーズン中（3月〜9月）のみ実行可能。</p>
-            <button id="btn-scout" class="btn-scout" onclick="scoutPlayer()">新戦力をスカウト (¥200万)</button>
+            <h2 class="section-title">球団スタッフ</h2>
+            <div id="staff-list"></div>
+            <h2 class="section-title">スタジアム改修</h2>
+            <button class="btn-scout" onclick="app.upgradeStadium()">ホームランテラス増設 (¥3億)</button>
         </div>
     </div>
 
-    <script>
-        // --- データ構造 ---
-        const lastNames = ["鈴木", "佐藤", "田中", "高橋", "伊藤", "渡辺", "山本", "中村", "小林", "加藤"];
-        const growthTypes = ["早熟", "普通", "晩成", "長寿", "ロマン"];
-        const potentials = ["S", "A", "B", "C", "D", "E"];
-
-        class Player {
-            constructor(role) {
-                this.name = lastNames[Math.floor(Math.random() * lastNames.length)];
-                this.role = role; // "野手" or "投手"
-                this.age = 18 + Math.floor(Math.random() * 10);
-                this.growth = growthTypes[Math.floor(Math.random() * growthTypes.length)];
-                this.potential = potentials[Math.floor(Math.random() * potentials.length)];
-                
-                // 現在値 (1-100)
-                this.ovr = Math.floor(Math.random() * 30) + 20; 
-                this.isStarter = false;
-            }
-        }
-
-        // --- ステート（状態）管理 ---
-        let state = {
-            year: 1,
-            month: 2,
-            funds: 1000,
-            wins: 0,
-            losses: 0,
-            roster: []
-        };
-
-        const SCHEDULE = {
-            2: "春季キャンプ", 3: "シーズン開幕", 4: "レギュラーシーズン", 5: "交流戦",
-            6: "レギュラーシーズン", 7: "オールスター＆トレード期限", 8: "レギュラーシーズン",
-            9: "シーズン最終盤", 10: "ポストシーズン", 11: "ドラフト会議・FA交渉", 12: "契約更改", 1: "自主トレ期間"
-        };
-
-        // --- 初期化 ---
-        function init() {
-            log("1年目のシーズンが開幕します。まずは「編成・起用」タブからスタメンを組んでください。");
-            // 初期選手配布 (野手12名、投手5名)
-            for(let i=0; i<12; i++) state.roster.push(new Player("野手"));
-            for(let i=0; i<5; i++) state.roster.push(new Player("投手"));
-            updateUI();
-        }
-
-        // --- タブ切り替え ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // --- UI更新 & バリデーション制御 ---
-        function updateUI() {
-            document.getElementById('current-date').innerText = `${state.year}年目 ${state.month}月 (${SCHEDULE[state.month]})`;
-            document.getElementById('funds').innerText = `¥${state.funds}万`;
-            document.getElementById('record').innerText = `${state.wins}勝${state.losses}敗`;
-            document.getElementById('roster-count').innerText = `${state.roster.length}/70`;
-
-            // 1. スケジュール進行ボタンのバリデーション
-            const btnNext = document.getElementById('btn-next-phase');
-            const alertBox = document.getElementById('validation-alert');
-            
-            // 試合がある月(3〜10月)はスタメンチェックが必要
-            if (state.month >= 3 && state.month <= 10) {
-                const starters = state.roster.filter(p => p.isStarter);
-                const batCount = starters.filter(p => p.role === "野手").length;
-                const pitCount = starters.filter(p => p.role === "投手").length;
-                
-                if (batCount < 9 || pitCount < 1) {
-                    btnNext.disabled = true;
-                    btnNext.innerText = "進行不可 (スタメン未設定)";
-                    alertBox.style.display = "block";
-                    alertBox.innerText = `⚠️ 野手9名、投手1名をスタメン設定してください。(現在: 野手${batCount}名/投手${pitCount}名)`;
-                } else {
-                    btnNext.disabled = false;
-                    btnNext.innerText = "試合を進行する";
-                    alertBox.style.display = "none";
-                }
-            } else {
-                btnNext.disabled = false;
-                btnNext.innerText = "次の月へ進む";
-                alertBox.style.display = "none";
-            }
-
-            // 2. スカウトボタンのバリデーション（時期と資金と枠）
-            const btnScout = document.getElementById('btn-scout');
-            if (state.month < 3 || state.month > 9) {
-                btnScout.disabled = true;
-                btnScout.innerText = "スカウト期間外です";
-            } else if (state.roster.length >= 70) {
-                btnScout.disabled = true;
-                btnScout.innerText = "支配下枠(70名)が上限です";
-            } else if (state.funds < 200) {
-                btnScout.disabled = true;
-                btnScout.innerText = "資金が不足しています";
-            } else {
-                btnScout.disabled = false;
-                btnScout.innerText = "新戦力をスカウト (¥200万)";
-            }
-
-            // ロスターリスト描画
-            const rList = document.getElementById('roster-list');
-            rList.innerHTML = '';
-            state.roster.forEach(p => {
-                const isStarterMark = p.isStarter ? '<span style="color:var(--accent); font-weight:bold;">[スタメン]</span> ' : '';
-                rList.innerHTML += `
-                    <div class="player-card">
-                        <div class="p-header">
-                            <div>${isStarterMark}${p.name} (${p.age}歳)</div>
-                            <div>OVR: ${p.ovr}</div>
-                        </div>
-                        <div class="p-tags">
-                            <span class="tag">${p.role}</span>
-                            <span class="tag">成長: ${p.growth}</span>
-                            <span class="tag tag-${p.potential}">将来性予測: ${p.potential}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // --- アクション ---
-        function autoSetOrder() {
-            // 一旦全員外す
-            state.roster.forEach(p => p.isStarter = false);
-            // 能力順にソートして上位を設定
-            let batters = state.roster.filter(p => p.role === "野手").sort((a,b) => b.ovr - a.ovr);
-            let pitchers = state.roster.filter(p => p.role === "投手").sort((a,b) => b.ovr - a.ovr);
-            
-            for(let i=0; i<Math.min(9, batters.length); i++) batters[i].isStarter = true;
-            for(let i=0; i<Math.min(1, pitchers.length); i++) pitchers[i].isStarter = true;
-            
-            log("AIコーチが最適なスタメンを自動編成しました。");
-            updateUI();
-        }
-
-        function scoutPlayer() {
-            state.funds -= 200;
-            const newP = new Player(Math.random() > 0.5 ? "野手" : "投手");
-            state.roster.push(newP);
-            log(`【スカウト】${newP.name}を獲得！(将来性予測: ${newP.potential})`);
-            updateUI();
-        }
-
-        function advancePhase() {
-            // 月ごとのイベント処理
-            if (state.month === 2) {
-                log("【春季キャンプ】選手たちがトレーニングを行い、能力が変動しました。");
-                state.roster.forEach(p => p.ovr += Math.floor(Math.random() * 3));
-            } else if (state.month >= 3 && state.month <= 10) {
-                simulateMatches(); // 試合シミュレーション
-            } else if (state.month === 11) {
-                log("【ドラフト会議】有望な新人選手をリストアップしました。（※今後のアップデートで実装）");
-            } else if (state.month === 12) {
-                log("【契約更改】全選手への年俸支払いが行われました。（資金減少）");
-                state.funds -= (state.roster.length * 10);
-                if (state.funds < 0) {
-                    log("⚠️【警告】資金がショートしました。来季の補強に深刻な影響が出ます。");
-                }
-            }
-
-            // カレンダー進行
-            state.month++;
-            if (state.month > 12) {
-                state.month = 1;
-                state.year++;
-                state.roster.forEach(p => p.age++); // 年齢を加算
-                log(`あけましておめでとうございます。${state.year}年目のシーズンが始まります。`);
-            }
-            updateUI();
-        }
-
-        // --- 試合シミュレーション (1打席ロジックの基礎) ---
-        function simulateMatches() {
-            // 月間に20試合ほど消化する想定の簡易処理
-            let monthlyWins = 0; let monthlyLosses = 0;
-            
-            // スタメンの総合力を算出
-            let myPower = state.roster.filter(p => p.isStarter).reduce((sum, p) => sum + p.ovr, 0);
-            
-            for(let i=0; i<20; i++) {
-                let enemyPower = 250 + Math.floor(Math.random() * 100);
-                
-                // 1球・1打席エンジンの基礎：乱数幅を広くとり、番狂わせを起こす
-                let myScore = Math.floor((myPower / 100) * (Math.random() * 5));
-                let enemyScore = Math.floor((enemyPower / 100) * (Math.random() * 5));
-                
-                if (myScore > enemyScore) monthlyWins++;
-                else if (enemyScore > myScore) monthlyLosses++;
-                // 引き分けは省略
-            }
-            
-            state.wins += monthlyWins;
-            state.losses += monthlyLosses;
-            const income = monthlyWins * 10;
-            state.funds += income;
-            
-            log(`【${SCHEDULE[state.month]}】月間成績: ${monthlyWins}勝 ${monthlyLosses}敗。観客収入として ¥${income}万 を獲得。`);
-        }
-
-        function log(msg) {
-            const window = document.getElementById('log-window');
-            window.innerHTML = `<div class="log-entry">> ${msg}</div>` + window.innerHTML;
-        }
-
-        init();
-    </script>
+    <!-- モジュールの読み込み -->
+    <script src="js/models.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
